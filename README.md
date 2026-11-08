@@ -261,8 +261,8 @@ public Result<ProfileVO> updateProfile(@Valid @RequestBody ProfileUpdateDTO dto)
 
 ### 注意事项
 
-- `jwt.secret` 在 `application.yml`，HS256 要求至少 32 字节，**上线前必须换随机串并用环境变量注入**。
-- 注册接口目前开放（`POST /api/auth/register`），不想让人注册时在 `AuthServiceImpl.register` 里加个开关即可。
+- `jwt.secret` 在 `application.yml`，HS256 要求至少 32 字节。默认值只是占位，源码公开等于密钥公开，**上线必须用环境变量 `JWT_SECRET` 换成随机长串**。
+- **注册功能默认关闭**：`app.auth.register-enabled: false`（`application.yml`）。关闭后 `POST /api/auth/register` 返回 403「注册功能已关闭」，登录不受影响。需要加协作者时临时改 `true`、注册完再关掉。
 
 ## 目录结构
 
@@ -355,7 +355,7 @@ homepage
 | GET | `/admin/gallery/{id}/edit` | 管理员 | 编辑图片页 |
 | POST | `/admin/gallery/{id}/edit` | 管理员 | 保存修改（file 可空 = 不换图） |
 | POST | `/admin/gallery/{id}/delete` | 管理员 | 删除图片（记录 + 文件） |
-| POST | `/api/auth/register` | 公开 | 注册 |
+| POST | `/api/auth/register` | 公开 | 注册（默认已关闭，见 `app.auth.register-enabled`） |
 | POST | `/api/auth/login` | 公开 | 登录（JSON，返回 token） |
 | GET | `/api/auth/me` | 登录 | 当前登录用户 |
 | POST | `/api/auth/logout` | 登录 | 退出登录 |
@@ -375,6 +375,6 @@ homepage
 - [ ] 文章是否需要 slug（/article/hello-world）
 - [x] 文件上传：已做双实现（本地 / 阿里云 OSS），在 `app.storage` 配置切换
 - [ ] 修改密码功能
-- [ ] 注册开关：现在注册接口是开放的，需要时关闭
+- [x] 注册开关：已关闭（`app.auth.register-enabled: false`）
 - [ ] 未匹配 URL 目前返回 JSON 404，浏览器访问时统一渲染 error/404.html
 - [ ] 以后拆前后端分离时：登录接口改造成纯 JSON + token 放 localStorage
