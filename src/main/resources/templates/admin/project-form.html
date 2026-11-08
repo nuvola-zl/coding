@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${editing} ? '编辑作品 · 个人主页' : '新建作品 · 个人主页'">作品表单</title>
+    <link rel="icon" th:href="@{/favicon.svg}" type="image/svg+xml">
+    <link rel="stylesheet" th:href="@{/css/site.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: topbar}"></div>
+
+<main class="page">
+
+    <div class="page-head">
+        <div>
+            <h1 th:text="${editing} ? '编辑作品' : '新建作品'">新建作品</h1>
+            <p class="auth-sub">草稿不会出现在主页，选「已发布」后访客才能看到。</p>
+        </div>
+        <a class="back" th:href="@{/admin/projects}">← 返回列表</a>
+    </div>
+
+    <form class="card" th:action="${formAction}" th:object="${form}" method="post">
+        <div class="form-grid">
+
+            <div class="field">
+                <label for="title">项目名称 <span class="required">*</span></label>
+                <input id="title" type="text" th:field="*{title}" placeholder="例如：苍穹外卖">
+                <p class="field-error" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></p>
+            </div>
+
+            <div class="field">
+                <label for="period">时间区间</label>
+                <input id="period" type="text" th:field="*{period}" placeholder="例如：2026.03 - 2026.06">
+                <p class="field-error" th:if="${#fields.hasErrors('period')}" th:errors="*{period}"></p>
+            </div>
+
+            <div class="field span-2">
+                <label for="summary">一句话简介</label>
+                <input id="summary" type="text" th:field="*{summary}" placeholder="列表页展示，一句话说清这个项目做了什么">
+                <p class="field-error" th:if="${#fields.hasErrors('summary')}" th:errors="*{summary}"></p>
+            </div>
+
+            <div class="field span-2">
+                <label for="description">详细介绍</label>
+                <textarea id="description" th:field="*{description}"
+                          placeholder="支持换行。可以写：项目背景、你负责的部分、踩过的坑、最终效果"></textarea>
+                <p class="field-error" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></p>
+            </div>
+
+            <div class="field span-2">
+                <label for="techStack">技术栈</label>
+                <input id="techStack" type="text" th:field="*{techStack}"
+                       placeholder="逗号分隔，例如：Spring Boot,Redis,MySQL">
+                <p class="field-error" th:if="${#fields.hasErrors('techStack')}" th:errors="*{techStack}"></p>
+            </div>
+
+            <div class="field">
+                <label for="repoUrl">源码仓库</label>
+                <input id="repoUrl" type="text" th:field="*{repoUrl}" placeholder="https://github.com/xxx/repo">
+                <p class="field-error" th:if="${#fields.hasErrors('repoUrl')}" th:errors="*{repoUrl}"></p>
+            </div>
+
+            <div class="field">
+                <label for="demoUrl">演示地址</label>
+                <input id="demoUrl" type="text" th:field="*{demoUrl}" placeholder="https://demo.example.com">
+                <p class="field-error" th:if="${#fields.hasErrors('demoUrl')}" th:errors="*{demoUrl}"></p>
+            </div>
+
+            <div class="field span-2">
+                <label for="cover">封面图地址</label>
+                <input id="cover" type="text" th:field="*{cover}" placeholder="留空则用项目名首字做占位">
+                <p class="field-error" th:if="${#fields.hasErrors('cover')}" th:errors="*{cover}"></p>
+            </div>
+
+            <div class="field">
+                <label for="status">状态</label>
+                <select id="status" th:field="*{status}">
+                    <option value="DRAFT">草稿（不在主页显示）</option>
+                    <option value="PUBLISHED">已发布</option>
+                </select>
+                <p class="field-error" th:if="${#fields.hasErrors('status')}" th:errors="*{status}"></p>
+            </div>
+
+            <div class="field">
+                <label for="sortOrder">排序（越小越靠前）</label>
+                <input id="sortOrder" type="number" min="0" max="9999" th:field="*{sortOrder}">
+                <p class="field-error" th:if="${#fields.hasErrors('sortOrder')}" th:errors="*{sortOrder}"></p>
+            </div>
+
+        </div>
+
+        <div class="form-actions">
+            <button class="btn btn-primary" type="submit">保存</button>
+            <a class="btn btn-ghost" th:href="@{/admin/projects}">取消</a>
+        </div>
+    </form>
+
+</main>
+
+<div th:replace="~{fragments/layout :: foot}"></div>
+
+</body>
+</html>

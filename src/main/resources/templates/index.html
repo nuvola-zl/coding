@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${displayName} + ' · 个人主页'">个人主页</title>
+    <link rel="icon" th:href="@{/favicon.svg}" type="image/svg+xml">
+    <link rel="stylesheet" th:href="@{/css/site.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: topbar}"></div>
+
+<main class="page">
+
+    <div class="banner" th:if="${param.saved != null}">资料已保存。</div>
+    <div class="banner banner-warn" th:if="${param.denied != null}">当前账号没有修改权限。</div>
+
+    <section class="hero">
+        <div class="avatar">
+            <img th:if="${profile != null and profile.avatar != null and !#strings.isEmpty(profile.avatar)}"
+                 th:src="${profile.avatar}" alt="头像">
+            <span th:if="${profile == null or profile.avatar == null or #strings.isEmpty(profile.avatar)}"
+                  th:text="${initial}">L</span>
+        </div>
+
+        <div class="hero-body">
+            <p class="eyebrow"
+               th:text="${profile != null and !#strings.isEmpty(profile.location) ? profile.location : '个人主页'}">
+                个人主页
+            </p>
+            <h1 th:text="${displayName}">未命名</h1>
+            <p class="headline"
+               th:if="${profile != null and !#strings.isEmpty(profile.headline)}"
+               th:text="${profile.headline}"></p>
+            <p class="headline" th:if="${profile == null or #strings.isEmpty(profile.headline)}">
+                这个人很懒，还没写一句话简介。
+            </p>
+
+            <div class="actions">
+                <a class="btn btn-primary" th:href="@{/edit}">编辑资料</a>
+                <a class="btn btn-ghost"
+                   th:if="${profile != null and !#strings.isEmpty(profile.email)}"
+                   th:href="|mailto:${profile.email}|">发送邮件</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="grid">
+        <article class="card">
+            <h2>关于我</h2>
+            <p class="prose" th:if="${profile != null and !#strings.isEmpty(profile.bio)}"
+               th:text="${profile.bio}"></p>
+            <p class="empty" th:if="${profile == null or #strings.isEmpty(profile.bio)}">
+                还没有填写自我介绍，登录后点「编辑资料」补充。
+            </p>
+        </article>
+
+        <article class="card">
+            <h2>联系方式</h2>
+            <ul class="facts">
+                <li>
+                    <span class="k">邮箱</span>
+                    <span class="v"
+                          th:text="${profile != null and !#strings.isEmpty(profile.email) ? profile.email : '—'}">—</span>
+                </li>
+                <li>
+                    <span class="k">GitHub</span>
+                    <span class="v">
+                        <a th:if="${profile != null and !#strings.isEmpty(profile.github)}"
+                           th:href="${profile.github}" target="_blank" rel="noopener"
+                           th:text="${profile.github}">GitHub</a>
+                        <span th:if="${profile == null or #strings.isEmpty(profile.github)}">—</span>
+                    </span>
+                </li>
+                <li>
+                    <span class="k">城市</span>
+                    <span class="v"
+                          th:text="${profile != null and !#strings.isEmpty(profile.location) ? profile.location : '—'}">—</span>
+                </li>
+            </ul>
+        </article>
+    </section>
+
+    <!-- 作品：只显示已发布，最多 6 个 -->
+    <section class="section" th:if="${!#lists.isEmpty(projects)}">
+        <div class="section-head">
+            <h2>作品</h2>
+            <a class="more" th:href="@{/projects}">全部作品 →</a>
+        </div>
+
+        <div class="project-grid">
+            <a class="project-card" th:each="p : ${projects}" th:href="@{|/projects/${p.id}|}">
+                <div class="cover">
+                    <img th:if="${!#strings.isEmpty(p.cover)}" th:src="${p.cover}" alt="">
+                    <span th:if="${#strings.isEmpty(p.cover)}" th:text="${#strings.substring(p.title, 0, 1)}">项</span>
+                </div>
+                <div class="project-body">
+                    <h3 th:text="${p.title}">项目名</h3>
+                    <p class="summary" th:if="${!#strings.isEmpty(p.summary)}" th:text="${p.summary}"></p>
+                    <div class="tags" th:if="${!#lists.isEmpty(p.techList)}">
+                        <span class="tag" th:each="t : ${p.techList}" th:text="${t}">Java</span>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </section>
+
+    <!-- 图片：最近 8 张，点任意一张去图片墙 -->
+    <section class="section" th:if="${!#lists.isEmpty(images)}">
+        <div class="section-head">
+            <h2>图片</h2>
+            <a class="more" th:href="@{/gallery}">全部图片 →</a>
+        </div>
+
+        <div class="figure-strip">
+            <a class="strip-item" th:each="img : ${images}" th:href="@{/gallery}">
+                <img th:src="${img.url}" th:alt="${img.title}" loading="lazy">
+                <span class="strip-cap" th:text="${img.title}">标题</span>
+            </a>
+        </div>
+    </section>
+
+</main>
+
+<div th:replace="~{fragments/layout :: foot}"></div>
+
+</body>
+</html>

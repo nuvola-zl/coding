@@ -1,0 +1,109 @@
+server:
+  port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+    session:
+      # 只用 Cookie 传 session id。默认还会往 URL 里塞 ;jsessionid=xxx，
+      # 这个 id 会通过 Referer 泄露给外站，属于典型的安全隐患
+      tracking-modes: cookie
+
+spring:
+  config:
+    # 本机的密钥 / 密码放在这个文件里，它不进 Git（.gitignore 已忽略）。
+    # optional: 前缀表示「文件不存在也能启动」——换了新机器忘了复制，程序会回退成本地存储，不会启动失败。
+    import:
+      - optional:file:./config/application-local.yml
+  application:
+    name: homepage
+  profiles:
+    active: dev          # 默认启用 dev，打包部署时用 --spring.profiles.active=prod 覆盖
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+  thymeleaf:
+    # 开发时关掉模板缓存，改完 HTML 刷新就能看到效果
+    cache: false
+    encoding: UTF-8
+
+# ========== MyBatis-Plus ==========
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: com.zhanglin.homepage.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+  global-config:
+    banner: false
+    db-config:
+      id-type: auto               # 主键策略：数据库自增
+      logic-delete-field: deleted # 逻辑删除字段
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+# ========== JWT ==========
+jwt:
+  # HS256 要求密钥至少 32 字节。默认值只是占位，任何人拿到源码都能伪造 token，
+  # 所以上线必须用环境变量 JWT_SECRET 覆盖成一个随机长串（这个仓库是公开的更要换）
+  secret: ${JWT_SECRET:homepage-jwt-secret-please-change-me-2026-11-08}
+  expire-days: 7
+  header: Authorization
+  prefix: "Bearer "
+
+# ========== 图片存储（本地 / 阿里云 OSS）==========
+app:
+  # ---------- 注册开关 ----------
+  # true  = 开放注册（第一个注册的账号自动成为管理员）
+  # false = 关闭注册，POST /api/auth/register 直接返回 403，登录不受影响
+  # 个人站点建议 false：只需要站长一个账号，别人注册了也没有权限，开着只是白送攻击面。
+  # 需要加协作者时临时改 true，注册完再关掉。
+  auth:
+    register-enabled: false
+
+  storage:
+    # local  = 存本机磁盘（默认，不需要任何账号就能跑）
+    # aliyun = 存阿里云 OSS
+    # 留空则自动判断：aliyun 四项配齐就走 OSS，没配就落到本地磁盘
+    type:
+    local:
+      # 本地图片存放目录，相对路径以项目根目录为准
+      dir: ./uploads
+      # 对外访问前缀，浏览器访问 /uploads/xxx.jpg 就是读这个目录
+      url-prefix: /uploads
+    aliyun:
+      # ------------------------------------------------------------------
+      # 密钥类配置一律不写在这个文件里（这个文件是要提交到 Git 的）。
+      # 真实值放在 config/application-local.yml（已被 .gitignore 忽略），
+      # 新机器上先复制模板：
+      #     cp config/application-local.yml.example config/application-local.yml
+      #
+      # 也可以不写文件，直接用环境变量注入（优先级最高）：
+      #     OSS_ENDPOINT / OSS_ACCESS_KEY_ID / OSS_ACCESS_KEY_SECRET / OSS_BUCKET
+      # ------------------------------------------------------------------
+
+      # 上传到 Bucket 下的哪个目录，用来和你别的文件分开
+      dir: homepage
+      # 可选：绑定的自定义域名 / CDN 域名，填了就用它拼访问地址
+      domain: ${OSS_DOMAIN:}
+# ========== 接口文档 ==========
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+
+# ========== 日志 ==========
+logging:
+  level:
+    root: info
+    com.zhanglin.homepage: debug

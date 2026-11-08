@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>图片 · 个人主页</title>
+    <link rel="icon" th:href="@{/favicon.svg}" type="image/svg+xml">
+    <link rel="stylesheet" th:href="@{/css/site.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: topbar}"></div>
+
+<main class="page">
+
+    <div class="page-head">
+        <div>
+            <h1>图片</h1>
+            <p class="auth-sub">
+                按分类整理的图片集，点开可以看大图。
+            </p>
+        </div>
+        <a class="btn btn-primary" th:if="${isAdmin}" th:href="@{/admin/gallery}">管理图片</a>
+    </div>
+
+    <!-- 分类切换 -->
+    <nav class="tabs">
+        <a class="tab" th:href="@{/gallery}" th:classappend="${current == 'ALL'} ? 'is-active'">
+            全部
+            <span class="tab-count" th:text="${counts['PERSONAL'] + counts['PROJECT']}">0</span>
+        </a>
+        <a class="tab" th:each="c : ${categories}"
+           th:href="@{/gallery(category=${c.name()})}"
+           th:classappend="${current == c.name()} ? 'is-active'">
+            <span th:text="${c.label}">分类</span>
+            <span class="tab-count" th:text="${counts[c.name()]}">0</span>
+        </a>
+    </nav>
+
+    <!-- 空状态 -->
+    <div class="empty-state" th:if="${#lists.isEmpty(images)}">
+        <p class="empty-title">这里还没有图片</p>
+        <p class="empty-desc" th:if="${isAdmin}">
+            去 <a th:href="@{/admin/gallery}">图片管理</a> 上传第一张吧。
+        </p>
+        <p class="empty-desc" th:unless="${isAdmin}">站长还没上传图片。</p>
+    </div>
+
+    <!-- 图片墙：CSS 多列布局，能自适应不同比例的图，不会出现强行裁切 -->
+    <div class="figure-wall" th:if="${!#lists.isEmpty(images)}">
+        <figure class="figure" th:each="img : ${images}">
+            <button class="figure-btn" type="button"
+                    th:attr="data-src=${img.url},data-caption=${img.title}">
+                <img th:src="${img.url}" th:alt="${img.title}" loading="lazy">
+            </button>
+            <figcaption>
+                <div class="figure-line">
+                    <span class="figure-title" th:text="${img.title}">标题</span>
+                    <span class="figure-cat" th:text="${img.categoryLabel}">分类</span>
+                </div>
+                <p class="figure-desc" th:if="${!#strings.isEmpty(img.description)}"
+                   th:text="${img.description}"></p>
+                <p class="figure-desc subtle" th:if="${!#strings.isEmpty(img.projectTitle)}">
+                    来自作品：<span th:text="${img.projectTitle}"></span>
+                </p>
+            </figcaption>
+        </figure>
+    </div>
+
+    <!-- 分页 -->
+    <nav class="pager" th:if="${result.pages > 1}">
+        <a class="btn btn-ghost" th:if="${result.current > 1}"
+           th:href="@{/gallery(category=${current}, page=${result.current - 1})}">← 上一页</a>
+        <span class="pager-info">
+            第 <span th:text="${result.current}">1</span> / <span th:text="${result.pages}">1</span> 页
+        </span>
+        <a class="btn btn-ghost" th:if="${result.current < result.pages}"
+           th:href="@{/gallery(category=${current}, page=${result.current + 1})}">下一页 →</a>
+    </nav>
+
+</main>
+
+<!-- 大图预览：纯原生 JS，不引任何库；遮罩结构抽在 fragments/layout.html 里复用 -->
+<div th:replace="~{fragments/layout :: lightbox}"></div>
+
+<div th:replace="~{fragments/layout :: foot}"></div>
+
+<script th:src="@{/js/gallery.js}"></script>
+</body>
+</html>

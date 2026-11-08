@@ -1,0 +1,28 @@
+# ================= 开发环境 =================
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/homepage?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true
+    username: root
+    # 密码故意不写在这里（这个文件会提交到 Git）。
+    # 来源二选一：
+    #   1. config/application-local.yml 里的 spring.datasource.password（本机开发）
+    #   2. 环境变量 SPRING_DATASOURCE_PASSWORD（部署时）
+    # 注意：这里千万别写成 password: ${DB_PASSWORD:}，
+    # 空默认值会解析成空字符串，反而覆盖掉本地配置里的密码，导致 Access denied。
+    hikari:
+      pool-name: HomepageHikariPool
+      minimum-idle: 5
+      maximum-pool-size: 15
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      connection-timeout: 30000
+
+mybatis-plus:
+  configuration:
+    # 开发时打印 SQL，方便练手排查；上线请删掉这行
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+logging:
+  level:
+    com.zhanglin.homepage: debug

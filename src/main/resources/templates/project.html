@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${project.title} + ' · 作品'">作品详情</title>
+    <link rel="icon" th:href="@{/favicon.svg}" type="image/svg+xml">
+    <link rel="stylesheet" th:href="@{/css/site.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: topbar}"></div>
+
+<main class="page">
+
+    <a class="back" th:href="@{/projects}">← 返回作品列表</a>
+
+    <article class="detail">
+        <p class="eyebrow" th:if="${!#strings.isEmpty(project.period)}" th:text="${project.period}">2026.03</p>
+
+        <h1 th:text="${project.title}">项目名</h1>
+
+        <p class="headline" th:if="${!#strings.isEmpty(project.summary)}" th:text="${project.summary}"></p>
+
+        <div class="tags" th:if="${!#lists.isEmpty(project.techList)}">
+            <span class="tag" th:each="t : ${project.techList}" th:text="${t}">Java</span>
+        </div>
+
+        <!-- 封面：作品表自己的 cover 字段，任意图片地址都行（图库里复制过来即可） -->
+        <figure class="detail-cover" th:if="${!#strings.isEmpty(project.cover)}">
+            <img th:src="${project.cover}" th:alt="${project.title}">
+        </figure>
+
+        <div class="detail-body" th:if="${!#strings.isEmpty(project.description)}">
+            <p class="prose" th:text="${project.description}"></p>
+        </div>
+
+        <div class="detail-meta"
+             th:if="${!#strings.isEmpty(project.repoUrl) or !#strings.isEmpty(project.demoUrl)}">
+            <span th:if="${!#strings.isEmpty(project.repoUrl)}">
+                <span class="k">源码</span>
+                <a th:href="${project.repoUrl}" target="_blank" rel="noopener"
+                   th:text="${project.repoUrl}">repo</a>
+            </span>
+            <span th:if="${!#strings.isEmpty(project.demoUrl)}">
+                <span class="k">演示</span>
+                <a th:href="${project.demoUrl}" target="_blank" rel="noopener"
+                   th:text="${project.demoUrl}">demo</a>
+            </span>
+        </div>
+    </article>
+
+    <!-- 项目截图：来自 gallery 表里 project_id 指向本作品的已发布图片 -->
+    <section class="detail-figures" th:if="${!#lists.isEmpty(images)}">
+        <div class="section-head">
+            <h2>项目截图</h2>
+            <span class="subtle" th:text="|共 ${#lists.size(images)} 张|">共 3 张</span>
+        </div>
+        <div class="figure-grid">
+            <figure class="figure" th:each="img : ${images}">
+                <button class="figure-btn" type="button"
+                        th:attr="data-src=${img.url},data-caption=${img.title}">
+                    <img th:src="${img.url}" th:alt="${img.title}" loading="lazy">
+                </button>
+                <figcaption>
+                    <div class="figure-line">
+                        <span class="figure-title" th:text="${img.title}">标题</span>
+                    </div>
+                    <p class="figure-desc subtle" th:if="${!#strings.isEmpty(img.description)}"
+                       th:text="${img.description}"></p>
+                </figcaption>
+            </figure>
+        </div>
+    </section>
+
+</main>
+
+<div th:replace="~{fragments/layout :: lightbox}"></div>
+<div th:replace="~{fragments/layout :: foot}"></div>
+
+<script th:src="@{/js/gallery.js}"></script>
+
+</body>
+</html>

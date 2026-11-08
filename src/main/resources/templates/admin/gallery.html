@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>图片管理 · 个人主页</title>
+    <link rel="icon" th:href="@{/favicon.svg}" type="image/svg+xml">
+    <link rel="stylesheet" th:href="@{/css/site.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: topbar}"></div>
+
+<main class="page">
+
+    <div class="banner" th:if="${saved}">已保存。</div>
+    <div class="banner" th:if="${deleted}">已删除（图片文件和记录一起清掉了）。</div>
+
+    <div class="toolbar">
+        <div>
+            <h1>图片管理</h1>
+            <p class="auth-sub">
+                草稿不会出现在图片墙。
+                当前存储：
+                <span class="pill" th:classappend="${storageType == 'aliyun'} ? 'pill-pub' : 'pill-draft'"
+                      th:text="${storageType == 'aliyun'} ? '阿里云 OSS' : '本地磁盘'">本地磁盘</span>
+            </p>
+        </div>
+        <a class="btn btn-primary" th:href="@{/admin/gallery/new}">+ 上传图片</a>
+    </div>
+
+    <!-- 分类筛选 -->
+    <nav class="tabs">
+        <a class="tab" th:href="@{/admin/gallery}" th:classappend="${current == 'ALL'} ? 'is-active'">全部</a>
+        <a class="tab" th:each="c : ${categories}"
+           th:href="@{/admin/gallery(category=${c.name()})}"
+           th:classappend="${current == c.name()} ? 'is-active'"
+           th:text="${c.label}">分类</a>
+    </nav>
+
+    <div class="admin-figure-grid" th:if="${!#lists.isEmpty(images)}">
+        <article class="admin-figure" th:each="img : ${images}">
+            <div class="admin-figure-thumb">
+                <img th:src="${img.url}" th:alt="${img.title}" loading="lazy">
+                <span class="admin-figure-status pill"
+                      th:classappend="${img.status == 'PUBLISHED'} ? 'pill-pub' : 'pill-draft'"
+                      th:text="${img.statusLabel}">状态</span>
+            </div>
+            <div class="admin-figure-body">
+                <h3 th:text="${img.title}">标题</h3>
+                <p class="muted small" th:text="|${img.categoryLabel} · 排序 ${img.sortOrder} · ${img.createTimeText}|">
+                    分类
+                </p>
+                <p class="muted small" th:if="${!#strings.isEmpty(img.projectTitle)}"
+                   th:text="|关联作品：${img.projectTitle}|"></p>
+                <div class="row-actions">
+                    <a th:href="@{|/admin/gallery/${img.id}/edit|}">编辑</a>
+                    <form th:action="@{|/admin/gallery/${img.id}/delete|}" method="post"
+                          onsubmit="return confirm('确定删除这张图片吗？图片文件也会一起删除，无法恢复。');">
+                        <button class="link-danger" type="submit">删除</button>
+                    </form>
+                </div>
+            </div>
+        </article>
+    </div>
+
+    <p class="empty" th:if="${#lists.isEmpty(images)}">还没有图片，点右上角上传一张。</p>
+
+    <p style="margin-top:26px"><a class="back" th:href="@{/gallery}">← 去看看图片墙</a></p>
+
+</main>
+
+<div th:replace="~{fragments/layout :: foot}"></div>
+
+</body>
+</html>

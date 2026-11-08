@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>编辑资料 · 个人主页</title>
+    <link rel="icon" th:href="@{/favicon.svg}" type="image/svg+xml">
+    <link rel="stylesheet" th:href="@{/css/site.css}">
+</head>
+<body>
+
+<header class="topbar">
+    <div class="topbar-inner">
+        <a class="brand" th:href="@{/}">
+            <span class="brand-mark">L</span>
+            <span>个人主页</span>
+        </a>
+        <div class="topbar-right">
+            <span class="who" th:text="|已登录 · ${currentUser.nickname}|"></span>
+            <form th:action="@{/logout}" method="post">
+                <button class="btn btn-ghost" type="submit">退出登录</button>
+            </form>
+        </div>
+    </div>
+</header>
+
+<main class="page">
+
+    <div class="page-head">
+        <div>
+            <h1>编辑资料</h1>
+            <p class="auth-sub">保存后主页立即生效。</p>
+        </div>
+        <a class="back" th:href="@{/}">← 返回主页</a>
+    </div>
+
+    <div class="banner" th:if="${success}" th:text="${success}">头像已更新</div>
+    <div class="banner banner-warn" th:if="${avatarError}" th:text="${avatarError}"></div>
+
+    <!-- 头像单独一个表单：文件上传必须 multipart，和下面的文字表单混在一起容易出编码问题 -->
+    <section class="card avatar-card">
+        <div class="avatar-edit">
+            <div class="avatar avatar-lg">
+                <img th:if="${profile != null and !#strings.isEmpty(profile.avatar)}"
+                     th:src="${profile.avatar}" alt="头像">
+                <span th:if="${profile == null or #strings.isEmpty(profile.avatar)}"
+                      th:text="${profile != null and !#strings.isEmpty(profile.nickname) ? #strings.substring(profile.nickname,0,1) : '头'}">头</span>
+            </div>
+            <div class="avatar-edit-body">
+                <h2>头像</h2>
+                <p class="field-hint">
+                    支持 JPG / PNG / GIF / WEBP，不超过 5MB。上传后自动替换，旧文件会被删掉。
+                </p>
+                <form class="avatar-upload" th:action="@{/edit/avatar}" method="post"
+                      enctype="multipart/form-data">
+                    <input type="file" name="avatarFile" accept="image/*" required>
+                    <button class="btn btn-primary" type="submit">上传头像</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <form class="card" th:action="@{/edit}" th:object="${form}" method="post">
+        <div class="form-grid">
+
+            <div class="field">
+                <label for="nickname">昵称 <span class="required">*</span></label>
+                <input id="nickname" type="text" th:field="*{nickname}" placeholder="你的名字">
+                <p class="field-error" th:if="${#fields.hasErrors('nickname')}" th:errors="*{nickname}"></p>
+            </div>
+
+            <div class="field">
+                <label for="location">所在城市</label>
+                <input id="location" type="text" th:field="*{location}" placeholder="例如：杭州">
+                <p class="field-error" th:if="${#fields.hasErrors('location')}" th:errors="*{location}"></p>
+            </div>
+
+            <div class="field span-2">
+                <label for="headline">一句话简介</label>
+                <input id="headline" type="text" th:field="*{headline}" placeholder="显示在名字下方">
+                <p class="field-error" th:if="${#fields.hasErrors('headline')}" th:errors="*{headline}"></p>
+            </div>
+
+            <div class="field">
+                <label for="email">邮箱</label>
+                <input id="email" type="text" th:field="*{email}" placeholder="you@example.com">
+                <p class="field-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></p>
+            </div>
+
+            <div class="field">
+                <label for="github">GitHub</label>
+                <input id="github" type="text" th:field="*{github}" placeholder="https://github.com/xxx">
+                <p class="field-error" th:if="${#fields.hasErrors('github')}" th:errors="*{github}"></p>
+            </div>
+
+            <div class="field span-2">
+                <label for="avatar">头像地址</label>
+                <input id="avatar" type="text" th:field="*{avatar}" placeholder="留空则显示名字首字">
+                <p class="field-hint">一般不用手填，上面上传头像后会自动写入；也可以直接粘一个外链。</p>
+                <p class="field-error" th:if="${#fields.hasErrors('avatar')}" th:errors="*{avatar}"></p>
+            </div>
+
+            <div class="field span-2">
+                <label for="bio">自我介绍</label>
+                <textarea id="bio" th:field="*{bio}" placeholder="支持换行"></textarea>
+                <p class="field-error" th:if="${#fields.hasErrors('bio')}" th:errors="*{bio}"></p>
+            </div>
+
+        </div>
+
+        <div class="form-actions">
+            <button class="btn btn-primary" type="submit">保存</button>
+            <a class="btn btn-ghost" th:href="@{/}">取消</a>
+        </div>
+    </form>
+
+</main>
+
+</body>
+</html>

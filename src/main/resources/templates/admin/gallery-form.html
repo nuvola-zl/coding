@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${editing} ? '编辑图片 · 个人主页' : '上传图片 · 个人主页'">图片表单</title>
+    <link rel="icon" th:href="@{/favicon.svg}" type="image/svg+xml">
+    <link rel="stylesheet" th:href="@{/css/site.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: topbar}"></div>
+
+<main class="page">
+
+    <div class="page-head">
+        <div>
+            <h1 th:text="${editing} ? '编辑图片' : '上传图片'">上传图片</h1>
+            <p class="auth-sub">
+                支持 JPG / PNG / GIF / WEBP / BMP，单张不超过 5MB。
+                当前存储：
+                <span class="pill" th:classappend="${storageType == 'aliyun'} ? 'pill-pub' : 'pill-draft'"
+                      th:text="${storageType == 'aliyun'} ? '阿里云 OSS' : '本地磁盘'">本地磁盘</span>
+            </p>
+        </div>
+        <a class="back" th:href="@{/admin/gallery}">← 返回列表</a>
+    </div>
+
+    <!-- 必须有 enctype，否则后台收到的文件是 null，报「请选择要上传的图片」 -->
+    <form class="card" th:action="${formAction}" th:object="${form}" method="post"
+          enctype="multipart/form-data">
+        <div class="form-grid">
+
+            <div class="field span-2">
+                <label for="file">
+                    图片文件
+                    <span class="required" th:unless="${editing}">*</span>
+                </label>
+                <input id="file" type="file" name="file" accept="image/*">
+                <p class="field-hint" th:if="${editing}">
+                    不选文件则只更新下面的文字信息，原图保持不变。
+                </p>
+                <p class="field-error" th:if="${fileError != null}" th:text="${fileError}"></p>
+                <!-- 编辑时显示当前图，提交前能确认没换错 -->
+                <div class="preview-box" th:if="${editing and previewUrl != null}">
+                    <img th:src="${previewUrl}" alt="当前图片">
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="title">标题 <span class="required">*</span></label>
+                <input id="title" type="text" th:field="*{title}" placeholder="例如：雨后的街角">
+                <p class="field-error" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></p>
+            </div>
+
+            <div class="field">
+                <label for="category">分类</label>
+                <select id="category" th:field="*{category}">
+                    <option th:each="c : ${categories}" th:value="${c.name()}" th:text="${c.label}">分类</option>
+                </select>
+                <p class="field-error" th:if="${#fields.hasErrors('category')}" th:errors="*{category}"></p>
+            </div>
+
+            <div class="field">
+                <label for="projectId">关联作品</label>
+                <select id="projectId" th:field="*{projectId}">
+                    <option th:value="''">不关联</option>
+                    <option th:each="p : ${projects}" th:value="${p.id}" th:text="${p.title}">作品</option>
+                </select>
+                <p class="field-hint">只有「项目图片」需要选，个人图片留空即可。</p>
+            </div>
+
+            <div class="field">
+                <label for="sortOrder">排序</label>
+                <input id="sortOrder" type="number" th:field="*{sortOrder}" min="0">
+                <p class="field-hint">数字越小越靠前。</p>
+            </div>
+
+            <div class="field span-2">
+                <label for="description">说明</label>
+                <textarea id="description" th:field="*{description}"
+                          placeholder="拍摄地点、时间，或者这张图和项目的关系"></textarea>
+                <p class="field-error" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></p>
+            </div>
+
+            <div class="field span-2">
+                <label>状态</label>
+                <div class="radio-row">
+                    <label class="radio">
+                        <input type="radio" th:field="*{status}" value="PUBLISHED">
+                        <span>已发布（图片墙上可见）</span>
+                    </label>
+                    <label class="radio">
+                        <input type="radio" th:field="*{status}" value="DRAFT">
+                        <span>草稿（只有自己能看到）</span>
+                    </label>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="form-actions">
+            <button class="btn btn-primary" type="submit" th:text="${editing} ? '保存' : '上传'">上传</button>
+            <a class="btn btn-ghost" th:href="@{/admin/gallery}">取消</a>
+        </div>
+    </form>
+
+</main>
+
+<div th:replace="~{fragments/layout :: foot}"></div>
+
+</body>
+</html>

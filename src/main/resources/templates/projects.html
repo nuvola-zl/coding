@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>作品 · 个人主页</title>
+    <link rel="icon" th:href="@{/favicon.svg}" type="image/svg+xml">
+    <link rel="stylesheet" th:href="@{/css/site.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: topbar}"></div>
+
+<main class="page">
+
+    <div class="page-head">
+        <div>
+            <h1>作品</h1>
+            <p class="auth-sub" th:text="|共 ${result.total} 个项目|">共 0 个项目</p>
+        </div>
+        <a class="back" th:href="@{/}">← 返回主页</a>
+    </div>
+
+    <div class="project-grid" th:if="${!#lists.isEmpty(result.records)}">
+        <a class="project-card" th:each="p : ${result.records}" th:href="@{|/projects/${p.id}|}">
+            <div class="cover">
+                <img th:if="${!#strings.isEmpty(p.cover)}" th:src="${p.cover}" alt="">
+                <span th:if="${#strings.isEmpty(p.cover)}" th:text="${#strings.substring(p.title, 0, 1)}">项</span>
+            </div>
+            <div class="project-body">
+                <h3 th:text="${p.title}">项目名</h3>
+                <p class="summary" th:if="${!#strings.isEmpty(p.summary)}" th:text="${p.summary}"></p>
+                <div class="tags" th:if="${!#lists.isEmpty(p.techList)}">
+                    <span class="tag" th:each="t : ${p.techList}" th:text="${t}">Java</span>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <p class="empty" th:if="${#lists.isEmpty(result.records)}">还没有发布的作品。</p>
+
+    <div class="pager" th:if="${result.pages > 1}">
+        <a class="btn btn-ghost" th:if="${result.current > 1}"
+           th:href="@{/projects(page=${result.current - 1})}">← 上一页</a>
+        <span th:text="|第 ${result.current} / ${result.pages} 页|"></span>
+        <a class="btn btn-ghost" th:if="${result.current < result.pages}"
+           th:href="@{/projects(page=${result.current + 1})}">下一页 →</a>
+    </div>
+
+</main>
+
+<div th:replace="~{fragments/layout :: foot}"></div>
+
+</body>
+</html>

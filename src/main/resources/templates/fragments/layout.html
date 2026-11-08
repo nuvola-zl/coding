@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+
+<!-- 顶部导航：所有页面共用 -->
+<header class="topbar" th:fragment="topbar">
+    <div class="topbar-inner">
+        <a class="brand" th:href="@{/}">
+            <span class="brand-mark">L</span>
+            <span>个人主页</span>
+        </a>
+        <div class="topbar-right">
+            <a class="nav-link" th:href="@{/projects}">作品</a>
+            <a class="nav-link" th:href="@{/gallery}">图片</a>
+            <a class="nav-link" th:href="@{/admin/gallery}" th:if="${isAdmin}">图片管理</a>
+            <span class="nav-sep"></span>
+            <span class="who" th:if="${currentUser != null}" th:text="|已登录 · ${currentUser.nickname}|"></span>
+            <form th:if="${currentUser != null}" th:action="@{/logout}" method="post">
+                <button class="btn btn-ghost" type="submit">退出登录</button>
+            </form>
+            <a class="btn btn-ghost" th:if="${currentUser == null}" th:href="@{/login}">登录</a>
+        </div>
+    </div>
+</header>
+
+<!-- 页脚 -->
+<footer class="site-foot" th:fragment="foot">
+    <span>© 2026 个人主页</span>
+    <span> · 由 Spring Boot + Thymeleaf 驱动</span>
+</footer>
+
+<!--
+  大图预览的遮罩层：图片墙和作品详情页共用。
+  用法：<div th:replace="~{fragments/layout :: lightbox}"></div>
+        同时引入 /js/gallery.js（它会自动接管页面上所有 .figure-btn）
+-->
+<div class="lightbox" id="lightbox" hidden th:fragment="lightbox">
+    <button class="lightbox-close" type="button" aria-label="关闭">×</button>
+    <figure class="lightbox-inner">
+        <img id="lightbox-img" alt="">
+        <figcaption id="lightbox-caption"></figcaption>
+    </figure>
+</div>
+
+</body>
+</html>

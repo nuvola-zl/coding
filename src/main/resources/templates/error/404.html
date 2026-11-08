@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>页面不存在 · 个人主页</title>
+    <link rel="icon" th:href="@{/favicon.svg}" type="image/svg+xml">
+    <link rel="stylesheet" th:href="@{/css/site.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: topbar}"></div>
+
+<main class="page">
+    <div class="detail" style="text-align:center;padding:72px 32px">
+        <p class="eyebrow">404</p>
+        <h1 style="margin-top:10px">这个页面不在了</h1>
+        <p class="headline">可能是链接失效，或者内容还没发布。</p>
+        <div class="actions" style="justify-content:center;margin-top:28px">
+            <a class="btn btn-primary" th:href="@{/}">返回主页</a>
+            <a class="btn btn-ghost" th:href="@{/projects}">看看作品</a>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/layout :: foot}"></div>
+
+</body>
+</html>

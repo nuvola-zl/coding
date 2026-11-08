@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zhanglin.homepage.mapper.ProfileMapper">
+
+    <!-- 通用查询字段，后续加字段改这里即可 -->
+    <sql id="BaseColumns">
+        id, nickname, avatar, headline, bio, email, github, location,
+        create_time, update_time
+    </sql>
+
+    <!-- 自定义 SQL 示例：按昵称查（逻辑删除条件要自己写，BaseMapper 才会自动加） -->
+    <select id="selectByNickname" resultType="com.zhanglin.homepage.entity.Profile">
+        SELECT
+        <include refid="BaseColumns"/>
+        FROM profile
+        WHERE nickname = #{nickname}
+        AND deleted = 0
+        LIMIT 1
+    </select>
+
+</mapper>
