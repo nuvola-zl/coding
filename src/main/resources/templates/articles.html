@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>文章 · 个人主页</title>
+    <link rel="icon" th:href="@{/favicon.svg}" type="image/svg+xml">
+    <link rel="stylesheet" th:href="@{/css/site.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: topbar}"></div>
+
+<main class="page">
+
+    <div class="page-head">
+        <div>
+            <h1>文章</h1>
+            <p class="auth-sub" th:text="|共 ${result.total} 篇|">共 0 篇</p>
+        </div>
+        <a class="back" th:href="@{/}">← 返回主页</a>
+    </div>
+
+    <!-- 标签筛选：点一下只留带这个标签的文章 -->
+    <nav class="tabs" th:if="${!#lists.isEmpty(tags)}">
+        <a class="tab" th:href="@{/articles}" th:classappend="${#strings.isEmpty(activeTag)} ? 'is-active'">全部</a>
+        <a class="tab" th:each="t : ${tags}"
+           th:href="@{/articles(tag=${t})}"
+           th:classappend="${t == activeTag} ? 'is-active'"
+           th:text="${t}">标签</a>
+    </nav>
+
+    <div class="article-list" th:if="${!#lists.isEmpty(result.records)}">
+        <a class="article-item" th:each="a : ${result.records}" th:href="@{|/articles/${a.id}|}">
+            <div class="article-meta">
+                <span th:text="${a.publishTimeText}">2026-11-08</span>
+                <span th:if="${a.readingMinutes != null}" th:text="|${a.readingMinutes} 分钟|">3 分钟</span>
+                <span th:if="${a.viewCount != null}" th:text="|${a.viewCount} 次阅读|">0 次阅读</span>
+            </div>
+            <h2 th:text="${a.title}">标题</h2>
+            <p class="article-summary" th:if="${!#strings.isEmpty(a.summary)}" th:text="${a.summary}"></p>
+            <div class="tags" th:if="${!#lists.isEmpty(a.tagList)}">
+                <span class="tag" th:each="t : ${a.tagList}" th:text="${t}">Java</span>
+            </div>
+        </a>
+    </div>
+
+    <p class="empty" th:if="${#lists.isEmpty(result.records)}">
+        <span th:if="${#strings.isEmpty(activeTag)}">还没有发布文章。</span>
+        <span th:if="${!#strings.isEmpty(activeTag)}" th:text="|没有「${activeTag}」标签下的文章。|"></span>
+    </p>
+
+    <div class="pager" th:if="${result.pages > 1}">
+        <a class="btn btn-ghost" th:if="${result.current > 1}"
+           th:href="${#strings.isEmpty(activeTag)} ? @{/articles(page=${result.current - 1})} : @{/articles(page=${result.current - 1}, tag=${activeTag})}">← 上一页</a>
+        <span th:text="|第 ${result.current} / ${result.pages} 页|"></span>
+        <a class="btn btn-ghost" th:if="${result.current < result.pages}"
+           th:href="${#strings.isEmpty(activeTag)} ? @{/articles(page=${result.current + 1})} : @{/articles(page=${result.current + 1}, tag=${activeTag})}">下一页 →</a>
+    </div>
+
+</main>
+
+<div th:replace="~{fragments/layout :: foot}"></div>
+
+</body>
+</html>

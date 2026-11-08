@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>文章管理 · 个人主页</title>
+    <link rel="icon" th:href="@{/favicon.svg}" type="image/svg+xml">
+    <link rel="stylesheet" th:href="@{/css/site.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: topbar}"></div>
+
+<main class="page">
+
+    <div class="banner" th:if="${saved}">已保存。</div>
+    <div class="banner" th:if="${deleted}">已删除。</div>
+
+    <div class="toolbar">
+        <div>
+            <h1>文章管理</h1>
+            <p class="auth-sub">草稿不会出现在前台，选「已发布」并保存后访客才能看到。</p>
+        </div>
+        <a class="btn btn-primary" th:href="@{/admin/articles/new}">+ 写文章</a>
+    </div>
+
+    <div class="table-wrap" th:if="${!#lists.isEmpty(articles)}">
+        <table class="data">
+            <thead>
+            <tr>
+                <th>标题</th>
+                <th>状态</th>
+                <th>标签</th>
+                <th class="num">阅读</th>
+                <th>更新</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="a : ${articles}">
+                <td>
+                    <a th:if="${a.status == 'PUBLISHED'}" th:href="@{|/articles/${a.id}|}"
+                       target="_blank" th:text="${a.title}">标题</a>
+                    <span th:if="${a.status != 'PUBLISHED'}" th:text="${a.title}">标题</span>
+                </td>
+                <td>
+                    <span class="pill" th:classappend="${a.status == 'PUBLISHED'} ? 'pill-pub' : 'pill-draft'"
+                          th:text="${a.statusLabel}">状态</span>
+                </td>
+                <td class="muted" th:text="${a.tags != null ? a.tags : '—'}">标签</td>
+                <td class="num" th:text="${a.viewCount}">0</td>
+                <td class="muted" th:text="${a.updateTimeText}">2026-11-08</td>
+                <td>
+                    <div class="row-actions">
+                        <a th:href="@{|/admin/articles/${a.id}/edit|}">编辑</a>
+                        <form th:action="@{|/admin/articles/${a.id}/delete|}" method="post"
+                              onsubmit="return confirm('确定删除这篇文章吗？删除后前台不再显示。');">
+                            <button class="link-danger" type="submit">删除</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <p class="empty" th:if="${#lists.isEmpty(articles)}">还没有文章，点右上角写第一篇。</p>
+
+    <p style="margin-top:26px"><a class="back" th:href="@{/}">← 返回主页</a></p>
+
+</main>
+
+<div th:replace="~{fragments/layout :: foot}"></div>
+
+</body>
+</html>

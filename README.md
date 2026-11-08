@@ -2,7 +2,7 @@
 
 Spring Boot + Thymeleaf 的个人主页，前后端不分离。访客不登录可以看主页，修改内容需要管理员登录。
 
-已完成：分层框架、统一响应、全局异常、JWT 登录鉴权、Thymeleaf 页面（主页 / 登录 / 编辑资料 / 作品 / 图片墙）、文件上传（本地 / 阿里云 OSS 双实现）。
+已完成：分层框架、统一响应、全局异常、JWT 登录鉴权、Thymeleaf 页面（主页 / 登录 / 编辑资料 / 作品 / 文章 / 图片墙）、文件上传（本地 / 阿里云 OSS 双实现）、Markdown 文章模块（服务端渲染 + XSS 白名单过滤）。
 
 ## 技术栈
 
@@ -16,6 +16,8 @@ Spring Boot + Thymeleaf 的个人主页，前后端不分离。访客不登录�
 | spring-security-crypto | Boot 管理 | 只用其中的 BCrypt 做密码加密 |
 | springdoc-openapi | 2.8.17 | Swagger UI 接口文档 |
 | aliyun-sdk-oss | 3.18.5 | 图片上传到阿里云 OSS（没配 key 时自动用本地磁盘） |
+| commonmark | 0.30.1 | Markdown → HTML 的 Java 参考实现（含 gfm-tables 表格扩展） |
+| owasp-java-html-sanitizer | 20240325.1 | 渲染结果的 XSS 白名单过滤 |
 | Lombok | - | 简化实体类 |
 
 ## 快速开始
@@ -23,16 +25,18 @@ Spring Boot + Thymeleaf 的个人主页，前后端不分离。访客不登录�
 1. 初始化数据库
 
 ```bash
-# 全新环境：建库 + 建表 + 初始数据（profile、sys_user）
+# 全新环境：建库 + 建表 + 初始数据（profile、sys_user、project、gallery、article）
 mysql -u root -p < sql/init.sql
 
-# 已经建过库，只补某张表：
-mysql -u root -p < sql/02-auth.sql     # 用户表
-mysql -u root -p < sql/03-project.sql  # 作品表
-mysql -u root -p < sql/04-gallery.sql  # 图库表
+# 已经建过库，只补某张表（Windows 下务必带 --default-character-set=utf8mb4，
+# 否则中文会按 GBK/latin1 解析，报 Data too long for column 或直接乱码）：
+mysql --default-character-set=utf8mb4 -u root -p < sql/02-auth.sql     # 用户表
+mysql --default-character-set=utf8mb4 -u root -p < sql/03-project.sql  # 作品表
+mysql --default-character-set=utf8mb4 -u root -p < sql/04-gallery.sql  # 图库表
+mysql --default-character-set=utf8mb4 -u root -p < sql/05-article.sql  # 文章表
 ```
 
-2. 检查 `src/main/resources/application-dev.yml` 里的 `username` / `password` 是否与本地 MySQL 一致。
+2. 检查数据库账号密码：没有 `config/application-local.yml` 就先复制模板再填（`cp config/application-local.yml.example config/application-local.yml`）。
 
 3. 启动
 
@@ -58,12 +62,16 @@ mvn spring-boot:run
 | `/projects` | 作品列表（分页，每页 6 个） | 公开 |
 | `/projects/{id}` | 作品详情；草稿按 404 处理 | 公开 |
 | `/gallery` | 图片墙（分类 Tab + 大图预览 + 分页） | 公开 |
+| `/articles` | 文章列表（分页 + 标签筛选） | 公开 |
+| `/articles/{id}` | 文章详情（Markdown 渲染正文 + 上一篇/下一篇）；草稿按 404 处理 | 公开 |
 | `/admin/projects` | 作品管理（含草稿） | 管理员 |
 | `/admin/projects/new` | 新建作品 | 管理员 |
 | `/admin/projects/{id}/edit` | 编辑作品 | 管理员 |
 | `/admin/gallery` | 图片管理（含草稿） | 管理员 |
 | `/admin/gallery/new` | 上传图片 | 管理员 |
 | `/admin/gallery/{id}/edit` | 编辑图片（可不换图只改文字） | 管理员 |
+| `/admin/articles` | 文章管理（含草稿） | 管理员 |
+| `/admin/articles/new`、`/admin/articles/{id}/edit` | 写文章 / 编辑文章（Markdown 编辑器 + 实时预览） | 管理员 |
 
 交互规则：
 
@@ -105,6 +113,54 @@ mvn spring-boot:run
 ### 已预置的示例数据
 
 `sql/init.sql` 和 `03-project.sql` 里插了 3 个作品（苍穹外卖、黑马点评、个人主页），可以直接在后台改掉。
+
+## 内容模块：文章（article）
+
+作品模块验证了"内容表怎么建"，文章模块解决的是另一类问题：**正文是长文本，而且不信任它的格式**。
+
+### 数据模型
+
+`article` 表核心字段：
+
+| 字段 | 说明 |
+| --- | --- |
+| `content` | Markdown **原文**，编辑时改的就是这一份，永远不覆盖 |
+| `content_html` | 保存时渲染并净化好的 HTML，详情页直接输出 |
+| `summary` | 摘要，留空则保存时自动截取正文前 120 字（纯文本） |
+| `tags` | 逗号分隔；筛选用 `FIND_IN_SET` 精确匹配，不用 `LIKE` |
+| `view_count` / `reading_minutes` | 阅读量 / 预计阅读分钟数（按 300 字/分钟估算） |
+| `publish_time` | **首次**发布时间，之后再编辑不覆盖，列表顺序不会因为改错字而跳动 |
+
+设计决策：
+
+- **原文和 HTML 存两份**：写一次读多次，避免每次请求都跑解析 + 过滤。代价是渲染规则改了要刷旧数据——所以读取时留了"HTML 为空则补渲染并回写"的兜底（`ArticleServiceImpl#getPublishedDetail`），手工 SQL 插入的数据也能正常显示。
+- **列表查询裁掉正文两列**：MEDIUMTEXT 一篇几十 KB，列表页用 MyBatis-Plus 的 `select(Article.class, WITHOUT_BODY)` 只查需要列，这是 `SELECT *` 在大字段表上的真实代价。
+- **渲染和净化是一体的**：见下节。
+
+### Markdown 渲染与 XSS（`MarkdownRenderer`）
+
+Markdown 语法允许内联 HTML，正文里写 `<script>alert(1)</script>` 会原样进入输出——存进库里，每个访客打开详情页都执行，这就是**存储型 XSS**。所以渲染结果必须过白名单：
+
+```
+Markdown 原文 --commonmark 解析--> HTML --OWASP 白名单过滤--> content_html --th:utext--> 页面
+```
+
+- 白名单只放行排版标签（`p/h2/code/pre/blockquote/table/a/img/...`），`<script>`、`onerror=`、`javascript:` 链接全部剥掉；
+- 链接强制 `rel="nofollow"`，URL 只放行 `http/https/mailto` 协议；
+- 后台编辑器的「预览」按钮走**同一条**渲染链路（`POST /admin/articles/preview`），预览即所得，不会出现"预览正常、发布走样"；
+- 模板里用 `th:utext` 输出（不转义）——**敢不转义的前提就是入库前已净化**，如果哪天有人绕过后台直接写库，这个前提就破了，所以净化逻辑必须放在服务端保存路径上，而不是模板里。
+
+一个实测的坑：OWASP 净化器会把中文标点输出成 `&#xff0c;` 数字实体，一篇中文的 HTML 体积膨胀三四倍且源码不可读。`MarkdownRenderer#decodeNonAsciiEntities` 会把实体还原成原字符，但**只还原 `< > & " '` 以外的字符**——这五个是 HTML 语法字符，还原出来等于自己开 XSS 后门。
+
+### 页面与交互
+
+- `/articles`：条目式列表（时间 + 标题 + 摘要 + 标签），顶部标签 Tab 筛选，分页。
+- `/articles/{id}`：正文排版（表格 / 深色代码块 / 引用块 / 行内代码），底部上一篇/下一篇（按 `(publish_time, id)` 字典序找邻居，同秒发布也不会漏），详情页访问时阅读量 +1（SQL 原子自增，不是"查出来加一写回"）。
+- `/admin/articles/new`：Markdown 编辑器，编辑/预览双 Tab 切换，预览模式下停手 600ms 自动刷新；封面上传直接复用 `/api/upload/image`。
+
+### 已预置的示例数据
+
+`sql/05-article.sql` 里插了 2 篇已发布 + 1 篇草稿，内容本身就是这个项目踩过的坑，可以直接在后台改掉。
 
 ## 图片模块（gallery）与文件存储
 
@@ -269,13 +325,16 @@ public Result<ProfileVO> updateProfile(@Valid @RequestBody ProfileUpdateDTO dto)
 ```
 homepage
 ├── sql/
-│   ├── init.sql                        建库建表（profile + sys_user + project）+ 初始数据
+│   ├── init.sql                        建库建表（profile + sys_user + project + gallery + article）+ 初始数据
 │   ├── 02-auth.sql                     增量脚本：只建 sys_user 表
-│   └── 03-project.sql                  增量脚本：只建 project 表
+│   ├── 03-project.sql                  增量脚本：只建 project 表
+│   ├── 04-gallery.sql                  增量脚本：只建 gallery 表
+│   └── 05-article.sql                  增量脚本：只建 article 表
 ├── src/main/java/com/zhanglin/homepage
 │   ├── HomepageApplication.java        启动类（@MapperScan 扫 mapper 包）
 │   ├── sql/init.sql 同级：02-auth / 03-project / 04-gallery 增量脚本
 │   ├── common/                         Result / ResultCode / PageResult / PageQuery / 全局异常 / 枚举
+│   │   └── markdown/MarkdownRenderer.java   Markdown 渲染 + OWASP XSS 白名单净化
 │   ├── security/                       认证相关
 │   │   ├── JwtUtils.java               生成 / 解析 token
 │   │   ├── JwtProperties.java          jwt.* 配置绑定
@@ -293,6 +352,8 @@ homepage
 │   │   ├── PageController.java         页面路由（/ /login /logout /edit /edit/avatar）
 │   │   ├── ProjectController.java      作品页面（/projects，/projects/{id}）
 │   │   ├── AdminProjectController.java 作品后台（/admin/projects/**）
+│   │   ├── ArticleController.java      文章页面（/articles，/articles/{id}）
+│   │   ├── AdminArticleController.java 文章后台（/admin/articles/**，含预览接口）
 │   │   ├── GalleryController.java      图片墙（/gallery）
 │   │   ├── AdminGalleryController.java 图库后台（/admin/gallery/**）
 │   │   ├── UploadController.java       上传接口（/api/upload/**）
@@ -301,7 +362,7 @@ homepage
 │   │   └── HealthController.java       健康检查
 │   ├── service/ + service/impl/        业务层
 │   ├── mapper/                         Mapper 接口（继承 BaseMapper）
-│   ├── entity/                         Profile / SysUser / Project / Gallery（BaseEntity 抽公共字段）
+│   ├── entity/                         Profile / SysUser / Project / Gallery / Article（BaseEntity 抽公共字段）
 │   ├── dto/ vo/                        入参 / 出参
 └── src/main/resources
     ├── application.yml                 公共配置 + jwt + thymeleaf
@@ -314,8 +375,10 @@ homepage
     │   ├── edit.html                   编辑资料
     │   ├── projects.html               作品列表
     │   ├── project.html                作品详情
+    │   ├── articles.html               文章列表
+    │   ├── article.html                文章详情
     │   ├── error/404.html              404 页
-    │   └── admin/                      作品管理列表 + 表单
+    │   └── admin/                      作品 / 图片 / 文章 的管理列表 + 表单
     └── static/                         css/site.css、favicon.svg
 ```
 
@@ -349,6 +412,15 @@ homepage
 | POST | `/api/profile/avatar` | 管理员 | 上传头像（multipart） |
 | POST | `/api/upload/image` | 管理员 | 通用图片上传（multipart） |
 | GET | `/gallery` | 公开 | 图片墙 |
+| GET | `/articles` | 公开 | 文章列表（分页 + `?tag=` 标签筛选） |
+| GET | `/articles/{id}` | 公开 | 文章详情（阅读量 +1） |
+| GET | `/admin/articles` | 管理员 | 文章管理 |
+| GET | `/admin/articles/new` | 管理员 | 写文章页 |
+| POST | `/admin/articles/new` | 管理员 | 保存新文章 |
+| GET | `/admin/articles/{id}/edit` | 管理员 | 编辑文章页 |
+| POST | `/admin/articles/{id}/edit` | 管理员 | 保存修改 |
+| POST | `/admin/articles/{id}/delete` | 管理员 | 删除文章（逻辑删除） |
+| POST | `/admin/articles/preview` | 管理员 | Markdown 实时预览（返回净化后的 HTML） |
 | GET | `/admin/gallery` | 管理员 | 图片管理 |
 | GET | `/admin/gallery/new` | 管理员 | 上传图片页 |
 | POST | `/admin/gallery/new` | 管理员 | 保存新图片（multipart） |
@@ -363,7 +435,7 @@ homepage
 ## 开发约定
 
 - 新增页面：`PageController` 加路由 → `templates/` 加模板 → 复用 `css/site.css`。
-- 新增内容模块（如技能、文章）照作品模块复制即可：`entity → mapper → service → controller（公开页面 + /admin 管理页面）`，状态字段直接复用 `ProjectStatus` 的思路或抽成通用枚举。
+- 新增内容模块（如技能、时间线）照作品/文章模块复制即可：`entity → mapper → service → controller（公开页面 + /admin 管理页面）`，状态字段直接复用 `ContentStatus`。
 - 单表增删改查直接用 `BaseMapper` / `IService`，复杂 SQL 写进 `resources/mapper/*.xml`。
 - 业务校验失败抛 `BusinessException`；写接口记得加 `@LoginRequired` 并按需指定 `minRole`。
 - 逻辑删除字段 `deleted` 在 `BaseEntity` 中处理；自定义 XML 里的 SQL 要自己加 `deleted = 0`。
@@ -371,7 +443,7 @@ homepage
 
 ## 待确认 / 后续规划
 
-- [ ] 内容模块扩展：技能（简单）→ 文章（要先定 Markdown 渲染方案）→ 时间线
+- [x] 内容模块扩展：技能（简单）→ 文章（Markdown 渲染 + XSS 白名单已落地）→ 时间线；技能模块待做
 - [ ] 文章是否需要 slug（/article/hello-world）
 - [x] 文件上传：已做双实现（本地 / 阿里云 OSS），在 `app.storage` 配置切换
 - [ ] 修改密码功能

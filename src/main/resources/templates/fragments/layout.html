@@ -14,7 +14,11 @@
         </a>
         <div class="topbar-right">
             <a class="nav-link" th:href="@{/projects}">作品</a>
+            <a class="nav-link" th:href="@{/articles}">文章</a>
             <a class="nav-link" th:href="@{/gallery}">图片</a>
+            <span class="nav-sep" th:if="${isAdmin}"></span>
+            <a class="nav-link" th:href="@{/admin/projects}" th:if="${isAdmin}">作品管理</a>
+            <a class="nav-link" th:href="@{/admin/articles}" th:if="${isAdmin}">文章管理</a>
             <a class="nav-link" th:href="@{/admin/gallery}" th:if="${isAdmin}">图片管理</a>
             <span class="nav-sep"></span>
             <span class="who" th:if="${currentUser != null}" th:text="|已登录 · ${currentUser.nickname}|"></span>

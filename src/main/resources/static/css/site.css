@@ -1279,3 +1279,315 @@ input[type="file"] {
         grid-template-columns: repeat(2, 1fr);
     }
 }
+
+/* ==========================================================================
+   文章模块
+   ========================================================================== */
+
+/* ---------- 列表：竖排条目，比卡片更适合"读文字" ---------- */
+
+.article-list {
+    margin-top: 22px;
+}
+
+.article-item {
+    display: block;
+    padding: 22px 0 24px;
+    border-bottom: 1px solid var(--line);
+}
+
+.article-item:first-child {
+    padding-top: 4px;
+}
+
+.article-item:hover h2 {
+    color: var(--accent);
+}
+
+.article-item h2 {
+    margin: 6px 0 8px;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.45;
+    letter-spacing: -.015em;
+    color: var(--ink);
+    transition: color .15s;
+}
+
+.article-item .article-summary {
+    margin: 0 0 12px;
+    font-size: 15px;
+    line-height: 1.75;
+    color: var(--ink-soft);
+}
+
+.article-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 16px;
+    font-size: 13px;
+    color: var(--muted);
+}
+
+/* 标签在详情页是可点的，去掉 tag 默认的下划线感 */
+a.tag:hover {
+    background: var(--accent-soft);
+}
+
+/* ---------- 正文排版：Markdown 渲染结果 ---------- */
+
+/*
+   注意这里没有复用 .prose —— 那个类是给纯文本用的，带了 white-space: pre-line，
+   套在 HTML 上会把源码里的换行再放大成空行，排版直接散架。
+*/
+.md-body {
+    font-size: 16px;
+    line-height: 1.85;
+    color: var(--ink-soft);
+    word-wrap: break-word;
+}
+
+.md-body > :first-child {
+    margin-top: 0;
+}
+
+.md-body > :last-child {
+    margin-bottom: 0;
+}
+
+.md-body h1,
+.md-body h2,
+.md-body h3,
+.md-body h4 {
+    color: var(--ink);
+    line-height: 1.35;
+    letter-spacing: -.015em;
+    margin: 34px 0 12px;
+}
+
+.md-body h1 {
+    font-size: 24px;
+}
+
+.md-body h2 {
+    font-size: 21px;
+}
+
+.md-body h3 {
+    font-size: 18px;
+}
+
+.md-body h4 {
+    font-size: 16px;
+}
+
+.md-body p {
+    margin: 0 0 18px;
+}
+
+.md-body ul,
+.md-body ol {
+    margin: 0 0 18px;
+    padding-left: 22px;
+}
+
+.md-body li {
+    margin: 5px 0;
+}
+
+.md-body li > p {
+    margin: 0;
+}
+
+.md-body a {
+    border-bottom: 1px solid rgba(35, 96, 75, .3);
+}
+
+.md-body blockquote {
+    margin: 0 0 20px;
+    padding: 2px 0 2px 16px;
+    border-left: 3px solid #d8d3c6;
+    color: var(--muted);
+}
+
+.md-body blockquote > :last-child {
+    margin-bottom: 0;
+}
+
+/* 行内代码：给个浅底 + 砖色字，和正文区分开 */
+.md-body code {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: .87em;
+    padding: 2px 6px;
+    border-radius: 5px;
+    background: #efece4;
+    color: #7c4a22;
+}
+
+/* 代码块：深底浅字，横向滚动而不是折行 */
+.md-body pre {
+    margin: 0 0 22px;
+    padding: 16px 18px;
+    border-radius: 12px;
+    background: #22262a;
+    color: #e6e4df;
+    overflow-x: auto;
+    font-size: 13.5px;
+    line-height: 1.75;
+}
+
+.md-body pre code {
+    padding: 0;
+    background: none;
+    color: inherit;
+    font-size: inherit;
+}
+
+.md-body img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+}
+
+.md-body hr {
+    margin: 32px 0;
+    border: none;
+    border-top: 1px solid var(--line);
+}
+
+.md-body table {
+    width: 100%;
+    margin: 0 0 22px;
+    border-collapse: collapse;
+    font-size: 14.5px;
+}
+
+.md-body th,
+.md-body td {
+    padding: 9px 12px;
+    border: 1px solid var(--line);
+    text-align: left;
+    vertical-align: top;
+}
+
+.md-body th {
+    background: #f4f1ea;
+    font-weight: 600;
+    color: var(--ink);
+}
+
+/* ---------- 上一篇 / 下一篇 ---------- */
+
+.article-nav {
+    display: flex;
+    gap: 16px;
+    margin-top: 40px;
+}
+
+.article-nav a {
+    flex: 1;
+    padding: 15px 18px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+    transition: border-color .15s;
+}
+
+.article-nav a:hover {
+    border-color: rgba(35, 96, 75, .35);
+}
+
+.article-nav .dir {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.article-nav .t {
+    font-size: 15px;
+    color: var(--ink);
+}
+
+.article-nav .right {
+    text-align: right;
+}
+
+/* ---------- 后台编辑器 ---------- */
+
+.editor-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.editor-bar .subtle {
+    margin-left: auto;
+}
+
+.editor textarea#content {
+    width: 100%;
+    min-height: 440px;
+    padding: 16px 18px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: #fbfaf7;
+    color: var(--ink);
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 13.5px;
+    line-height: 1.75;
+    resize: vertical;
+}
+
+.editor textarea#content:focus {
+    outline: none;
+    border-color: rgba(35, 96, 75, .45);
+    box-shadow: 0 0 0 3px rgba(35, 96, 75, .08);
+}
+
+.editor-preview {
+    min-height: 440px;
+    padding: 24px 26px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+}
+
+/* 封面输入 + 上传按钮同一行 */
+.cover-row {
+    display: flex;
+    gap: 10px;
+}
+
+.cover-row input[type="text"] {
+    flex: 1;
+}
+
+.file-btn {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.cover-preview {
+    display: block;
+    margin-top: 12px;
+    max-height: 160px;
+    width: auto;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+}
+
+@media (max-width: 720px) {
+    .article-nav {
+        flex-direction: column;
+    }
+
+    .article-nav .right {
+        text-align: left;
+    }
+}

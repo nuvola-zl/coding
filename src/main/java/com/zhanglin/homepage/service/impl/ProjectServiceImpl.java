@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.zhanglin.homepage.common.PageResult;
 import com.zhanglin.homepage.common.ResultCode;
-import com.zhanglin.homepage.common.enums.ProjectStatus;
+import com.zhanglin.homepage.common.enums.ContentStatus;
 import com.zhanglin.homepage.common.exception.BusinessException;
 import com.zhanglin.homepage.dto.ProjectSaveDTO;
 import com.zhanglin.homepage.entity.Project;
@@ -39,7 +39,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
     public List<ProjectVO> listPublished(int limit) {
         int safeLimit = Math.max(1, Math.min(limit, MAX_LIST_LIMIT));
         List<Project> projects = lambdaQuery()
-                .eq(Project::getStatus, ProjectStatus.PUBLISHED.name())
+                .eq(Project::getStatus, ContentStatus.PUBLISHED.name())
                 .orderByAsc(Project::getSortOrder)
                 .orderByDesc(Project::getId)
                 .last("LIMIT " + safeLimit)
@@ -51,7 +51,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
     public PageResult<ProjectVO> pagePublished(long pageNum, long pageSize) {
         Page<Project> page = new Page<>(Math.max(1, pageNum), Math.min(Math.max(1, pageSize), 50));
         page(page, Wrappers.<Project>lambdaQuery()
-                .eq(Project::getStatus, ProjectStatus.PUBLISHED.name())
+                .eq(Project::getStatus, ContentStatus.PUBLISHED.name())
                 .orderByAsc(Project::getSortOrder)
                 .orderByDesc(Project::getId));
         return PageResult.of(page, this::toVO);
@@ -61,7 +61,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
     public ProjectVO getPublishedDetail(Long id) {
         Project project = getById(id);
         // 草稿不能被猜 id 看到，统一按"不存在"处理
-        if (project == null || !ProjectStatus.PUBLISHED.name().equals(project.getStatus())) {
+        if (project == null || !ContentStatus.PUBLISHED.name().equals(project.getStatus())) {
             return null;
         }
         return toVO(project);
@@ -99,7 +99,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         }
 
         BeanUtils.copyProperties(dto, project);
-        project.setStatus(ProjectStatus.of(dto.getStatus()).name());
+        project.setStatus(ContentStatus.of(dto.getStatus()).name());
         if (project.getSortOrder() == null) {
             project.setSortOrder(0);
         }
@@ -146,7 +146,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         ProjectVO vo = new ProjectVO();
         BeanUtils.copyProperties(project, vo);
         vo.setTechList(splitTechStack(project.getTechStack()));
-        vo.setStatusLabel(ProjectStatus.of(project.getStatus()).getLabel());
+        vo.setStatusLabel(ContentStatus.of(project.getStatus()).getLabel());
         if (project.getUpdateTime() != null) {
             vo.setUpdateTimeText(project.getUpdateTime().format(UPDATE_TIME_FORMATTER));
         }

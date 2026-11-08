@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${article.title} + ' · 文章'">文章</title>
+    <link rel="icon" th:href="@{/favicon.svg}" type="image/svg+xml">
+    <link rel="stylesheet" th:href="@{/css/site.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: topbar}"></div>
+
+<main class="page">
+
+    <a class="back" th:href="@{/articles}">← 返回文章列表</a>
+
+    <article class="detail">
+        <div class="article-meta">
+            <span th:text="${article.publishTimeText}">2026-11-08</span>
+            <span th:if="${article.readingMinutes != null}" th:text="|约 ${article.readingMinutes} 分钟读完|">约 3 分钟读完</span>
+            <span th:if="${article.viewCount != null}" th:text="|${article.viewCount} 次阅读|">0 次阅读</span>
+            <!-- 改过不止一次才显示，否则「更新于」和发布日期一样，属于噪音 -->
+            <span th:if="${article.updateTimeText != null and article.updateTimeText != article.publishTimeText}"
+                  th:text="|更新于 ${article.updateTimeText}|"></span>
+        </div>
+
+        <h1 th:text="${article.title}">标题</h1>
+
+        <p class="headline" th:if="${!#strings.isEmpty(article.summary)}" th:text="${article.summary}"></p>
+
+        <div class="tags" th:if="${!#lists.isEmpty(article.tagList)}">
+            <a class="tag" th:each="t : ${article.tagList}" th:href="@{/articles(tag=${t})}" th:text="${t}">标签</a>
+        </div>
+
+        <figure class="detail-cover" th:if="${!#strings.isEmpty(article.cover)}">
+            <img th:src="${article.cover}" th:alt="${article.title}">
+        </figure>
+
+        <!--
+          关键的一行：th:utext 不转义，直接把 HTML 输出到页面。
+          之所以敢这么写，是因为 contentHtml 在保存时已经过 OWASP 白名单过滤
+          （见 MarkdownRenderer），<script>、onerror= 之类的东西早被剥掉了。
+          如果把用户输入原样丢进 utext，那就是一个教科书级的存储型 XSS。
+        -->
+        <div class="detail-body">
+            <div class="md-body" th:utext="${article.contentHtml}">正文</div>
+        </div>
+    </article>
+
+    <!-- 上一篇 / 下一篇：按发布时间排，缺哪边就只显示另一边 -->
+    <nav class="article-nav" th:if="${article.prevArticle != null or article.nextArticle != null}">
+        <a th:if="${article.prevArticle != null}" th:href="@{|/articles/${article.prevArticle.id}|}">
+            <span class="dir">← 上一篇</span>
+            <span class="t" th:text="${article.prevArticle.title}">标题</span>
+        </a>
+        <span th:if="${article.prevArticle == null}" style="flex:1"></span>
+
+        <a class="right" th:if="${article.nextArticle != null}" th:href="@{|/articles/${article.nextArticle.id}|}">
+            <span class="dir">下一篇 →</span>
+            <span class="t" th:text="${article.nextArticle.title}">标题</span>
+        </a>
+    </nav>
+
+</main>
+
+<div th:replace="~{fragments/layout :: foot}"></div>
+
+</body>
+</html>

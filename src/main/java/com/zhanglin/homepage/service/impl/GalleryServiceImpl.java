@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.zhanglin.homepage.common.PageResult;
 import com.zhanglin.homepage.common.ResultCode;
 import com.zhanglin.homepage.common.enums.GalleryCategory;
-import com.zhanglin.homepage.common.enums.ProjectStatus;
+import com.zhanglin.homepage.common.enums.ContentStatus;
 import com.zhanglin.homepage.common.exception.BusinessException;
 import com.zhanglin.homepage.dto.GallerySaveDTO;
 import com.zhanglin.homepage.entity.Gallery;
@@ -58,7 +58,7 @@ public class GalleryServiceImpl extends ServiceImpl<GalleryMapper, Gallery> impl
     public List<GalleryVO> listPublished(GalleryCategory category, int limit) {
         int safeLimit = Math.max(1, Math.min(limit, MAX_LIST_LIMIT));
         List<Gallery> list = lambdaQuery()
-                .eq(Gallery::getStatus, ProjectStatus.PUBLISHED.name())
+                .eq(Gallery::getStatus, ContentStatus.PUBLISHED.name())
                 .eq(category != null, Gallery::getCategory, category == null ? null : category.name())
                 .orderByAsc(Gallery::getSortOrder)
                 .orderByDesc(Gallery::getId)
@@ -71,7 +71,7 @@ public class GalleryServiceImpl extends ServiceImpl<GalleryMapper, Gallery> impl
     public PageResult<GalleryVO> pagePublished(GalleryCategory category, long pageNum, long pageSize) {
         Page<Gallery> page = new Page<>(Math.max(1, pageNum), Math.min(Math.max(1, pageSize), 60));
         page(page, Wrappers.<Gallery>lambdaQuery()
-                .eq(Gallery::getStatus, ProjectStatus.PUBLISHED.name())
+                .eq(Gallery::getStatus, ContentStatus.PUBLISHED.name())
                 .eq(category != null, Gallery::getCategory, category == null ? null : category.name())
                 .orderByAsc(Gallery::getSortOrder)
                 .orderByDesc(Gallery::getId));
@@ -102,7 +102,7 @@ public class GalleryServiceImpl extends ServiceImpl<GalleryMapper, Gallery> impl
         for (GalleryCategory category : GalleryCategory.values()) {
             result.put(category.name(), lambdaQuery()
                     .eq(Gallery::getCategory, category.name())
-                    .eq(Gallery::getStatus, ProjectStatus.PUBLISHED.name())
+                    .eq(Gallery::getStatus, ContentStatus.PUBLISHED.name())
                     .count());
         }
         return result;
@@ -115,7 +115,7 @@ public class GalleryServiceImpl extends ServiceImpl<GalleryMapper, Gallery> impl
         }
         List<Gallery> list = lambdaQuery()
                 .eq(Gallery::getProjectId, projectId)
-                .eq(Gallery::getStatus, ProjectStatus.PUBLISHED.name())
+                .eq(Gallery::getStatus, ContentStatus.PUBLISHED.name())
                 .orderByAsc(Gallery::getSortOrder)
                 .orderByDesc(Gallery::getId)
                 .list();
@@ -193,7 +193,7 @@ public class GalleryServiceImpl extends ServiceImpl<GalleryMapper, Gallery> impl
         gallery.setCategory(GalleryCategory.of(dto.getCategory()).name());
         gallery.setProjectId(dto.getProjectId());
         gallery.setSortOrder(dto.getSortOrder() == null ? 0 : dto.getSortOrder());
-        gallery.setStatus(ProjectStatus.of(dto.getStatus()).name());
+        gallery.setStatus(ContentStatus.of(dto.getStatus()).name());
     }
 
     /**
@@ -222,7 +222,7 @@ public class GalleryServiceImpl extends ServiceImpl<GalleryMapper, Gallery> impl
             vo.setProjectTitle(gallery.getProjectId() == null ? null : projectTitles.get(gallery.getProjectId()));
             vo.setSortOrder(gallery.getSortOrder());
             vo.setStatus(gallery.getStatus());
-            vo.setStatusLabel(ProjectStatus.of(gallery.getStatus()).getLabel());
+            vo.setStatusLabel(ContentStatus.of(gallery.getStatus()).getLabel());
             if (gallery.getCreateTime() != null) {
                 vo.setCreateTimeText(gallery.getCreateTime().format(DATE_FORMATTER));
             }

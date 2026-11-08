@@ -7,6 +7,7 @@ import com.zhanglin.homepage.security.LoginRequired;
 import com.zhanglin.homepage.security.Role;
 import com.zhanglin.homepage.security.TokenCookieUtils;
 import com.zhanglin.homepage.security.UserContext;
+import com.zhanglin.homepage.service.ArticleService;
 import com.zhanglin.homepage.service.AuthService;
 import com.zhanglin.homepage.service.GalleryService;
 import com.zhanglin.homepage.service.ProfileService;
@@ -44,6 +45,7 @@ public class PageController extends BasePageController {
 
     private final ProfileService profileService;
     private final ProjectService projectService;
+    private final ArticleService articleService;
     private final GalleryService galleryService;
     private final UploadService uploadService;
     private final AuthService authService;
@@ -63,6 +65,8 @@ public class PageController extends BasePageController {
         model.addAttribute("year", LocalDate.now().getYear());
         // 主页只展示前 6 个已发布作品，更多去 /projects
         model.addAttribute("projects", projectService.listPublished(6));
+        // 最新 4 篇已发布文章
+        model.addAttribute("articles", articleService.listLatest(4));
         // 图库取最近 8 张，按「个人喜欢」优先展示
         model.addAttribute("images", galleryService.listPublished(null, 8));
         return "index";

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${editing} ? '编辑文章 · 个人主页' : '写文章 · 个人主页'">文章表单</title>
+    <link rel="icon" th:href="@{/favicon.svg}" type="image/svg+xml">
+    <link rel="stylesheet" th:href="@{/css/site.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: topbar}"></div>
+
+<main class="page">
+
+    <div class="page-head">
+        <div>
+            <h1 th:text="${editing} ? '编辑文章' : '写文章'">写文章</h1>
+            <p class="auth-sub">正文用 Markdown 写，保存时服务端会渲染成 HTML 并做一次 XSS 白名单过滤。</p>
+        </div>
+        <a class="back" th:href="@{/admin/articles}">← 返回列表</a>
+    </div>
+
+    <form class="card" th:action="${formAction}" th:object="${form}" method="post">
+        <div class="form-grid">
+
+            <div class="field span-2">
+                <label for="title">标题 <span class="required">*</span></label>
+                <input id="title" type="text" th:field="*{title}" placeholder="例如：MyBatis-Plus 逻辑删除的三个坑">
+                <p class="field-error" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></p>
+            </div>
+
+            <div class="field">
+                <label for="tags">标签</label>
+                <input id="tags" type="text" th:field="*{tags}" placeholder="逗号分隔，例如：Spring Boot,MySQL">
+                <p class="field-error" th:if="${#fields.hasErrors('tags')}" th:errors="*{tags}"></p>
+            </div>
+
+            <div class="field">
+                <label for="status">状态</label>
+                <select id="status" th:field="*{status}">
+                    <option value="DRAFT">草稿（不在前台显示）</option>
+                    <option value="PUBLISHED">已发布</option>
+                </select>
+                <p class="field-error" th:if="${#fields.hasErrors('status')}" th:errors="*{status}"></p>
+            </div>
+
+            <div class="field span-2">
+                <label for="summary">摘要</label>
+                <input id="summary" type="text" th:field="*{summary}"
+                       placeholder="列表页展示，留空则自动截取正文前 120 字">
+                <p class="field-error" th:if="${#fields.hasErrors('summary')}" th:errors="*{summary}"></p>
+            </div>
+
+            <div class="field span-2">
+                <label for="cover">封面图</label>
+                <div class="cover-row">
+                    <input id="cover" type="text" th:field="*{cover}" placeholder="图片地址，或直接选文件上传">
+                    <label class="btn btn-ghost file-btn">
+                        上传
+                        <input id="coverFile" type="file" accept="image/*" hidden>
+                    </label>
+                </div>
+                <img id="cover-preview" class="cover-preview" alt="" th:if="${!#strings.isEmpty(form.cover)}"
+                     th:src="${form.cover}">
+                <p class="field-error" th:if="${#fields.hasErrors('cover')}" th:errors="*{cover}"></p>
+            </div>
+
+            <div class="field span-2">
+                <label for="content">正文（Markdown） <span class="required">*</span></label>
+
+                <div class="editor">
+                    <div class="editor-bar">
+                        <button class="tab is-active" type="button" data-pane-btn="write">编辑</button>
+                        <button class="tab" type="button" data-pane-btn="preview">预览</button>
+                        <span class="subtle" id="preview-hint">预览和发布走同一条渲染链路</span>
+                    </div>
+
+                    <textarea id="content" th:field="*{content}"
+                              placeholder="## 小标题&#10;&#10;正文段落，**加粗**、`行内代码`、- 列表、```代码块```、| 表格 |"></textarea>
+
+                    <div class="md-body editor-preview" id="preview-pane" hidden></div>
+                </div>
+
+                <p class="field-error" th:if="${#fields.hasErrors('content')}" th:errors="*{content}"></p>
+            </div>
+
+        </div>
+
+        <div class="form-actions">
+            <button class="btn btn-primary" type="submit">保存</button>
+            <a class="btn btn-ghost" th:href="@{/admin/articles}">取消</a>
+        </div>
+    </form>
+
+</main>
+
+<div th:replace="~{fragments/layout :: foot}"></div>
+
+<script th:inline="javascript">
+    (function () {
+        var textarea = document.getElementById('content');
+        var previewPane = document.getElementById('preview-pane');
+        var hint = document.getElementById('preview-hint');
+        var buttons = document.querySelectorAll('[data-pane-btn]');
+        var currentPane = 'write';
+        var timer = null;
+
+        function switchPane(pane) {
+            currentPane = pane;
+            buttons.forEach(function (btn) {
+                btn.classList.toggle('is-active', btn.dataset.paneBtn === pane);
+            });
+            var isPreview = pane === 'preview';
+            textarea.hidden = isPreview;
+            previewPane.hidden = !isPreview;
+            if (isPreview) {
+                requestPreview();
+            }
+        }
+
+        /**
+         * 预览请求：把当前正文丢给服务端渲染，拿回来的 HTML 已经是净化过的。
+         * 注意这里没有在前端引 marked.js —— 前端渲染和后端渲染两套规则很容易不一致，
+         * 到头来预览和正式效果对不上，反而更难排查。
+         */
+        function requestPreview() {
+            var body = new URLSearchParams();
+            body.append('content', textarea.value);
+
+            fetch('/admin/articles/preview', {method: 'POST', body: body})
+                .then(function (resp) {
+                    return resp.json();
+                })
+                .then(function (json) {
+                    if (json.code === 200) {
+                        previewPane.innerHTML = json.data;
+                        hint.textContent = '预览已更新';
+                    } else {
+                        previewPane.textContent = '渲染失败：' + json.message;
+                    }
+                })
+                .catch(function () {
+                    previewPane.textContent = '请求失败，可能登录已过期，刷新页面重新登录试试。';
+                });
+        }
+
+        buttons.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                switchPane(btn.dataset.paneBtn);
+            });
+        });
+
+        // 在预览模式下继续打字，停手 600ms 后自动刷新预览
+        textarea.addEventListener('input', function () {
+            if (currentPane !== 'preview') {
+                return;
+            }
+            clearTimeout(timer);
+            timer = setTimeout(requestPreview, 600);
+        });
+
+        // ---- 封面上传：走 /api/upload/image，和头像、图库共用一套存储实现 ----
+        var coverInput = document.getElementById('cover');
+        var coverFile = document.getElementById('coverFile');
+        var coverPreview = document.getElementById('cover-preview');
+
+        coverFile.addEventListener('change', function () {
+            if (!coverFile.files.length) {
+                return;
+            }
+            var formData = new FormData();
+            formData.append('file', coverFile.files[0]);
+            formData.append('dir', 'article');
+
+            hint.textContent = '封面上传中…';
+            fetch('/api/upload/image', {method: 'POST', body: formData})
+                .then(function (resp) {
+                    return resp.json();
+                })
+                .then(function (json) {
+                    if (json.code === 200) {
+                        coverInput.value = json.data.url;
+                        coverPreview.src = json.data.url;
+                        coverPreview.hidden = false;
+                        hint.textContent = '封面已上传';
+                    } else {
+                        hint.textContent = '上传失败：' + json.message;
+                    }
+                })
+                .catch(function () {
+                    hint.textContent = '上传失败，检查登录状态后重试';
+                });
+        });
+
+        // 编辑已有文章时默认显示正文，不自动渲染预览（多一次请求没必要）
+        textarea.hidden = false;
+        previewPane.hidden = true;
+    })();
+</script>
+
+</body>
+</html>
