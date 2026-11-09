@@ -21,7 +21,7 @@ spring:
 mybatis-plus:
   configuration:
     # 开发时打印 SQL，方便练手排查；上线请删掉这行
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+#    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
 logging:
   level:
